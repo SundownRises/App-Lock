@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Adaptive icon backgrounds -->
+    <color name="ic_applock_background">#3F51B5</color>
+    <color name="ic_weather_background">#2196F3</color>
+    <color name="ic_calculator_background">#FF9800</color>
 </resources>

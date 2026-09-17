@@ -6,4 +6,9 @@
     <string name="app_name_calculator">Calculator</string>
 
     <string name="accessibility_service_description">App Lock uses this service to detect when you open a protected app and show the PIN screen. It only monitors which app comes to the foreground — it cannot read screen contents.</string>
+
+    <!-- Icon descriptions for content descriptions -->
+    <string name="ic_applock_desc">App Lock icon</string>
+    <string name="ic_weather_desc">Weather icon</string>
+    <string name="ic_calculator_desc">Calculator icon</string>
 </resources>
