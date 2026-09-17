@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">App Lock</string>
+    <string name="app_name_applock">App Lock</string>
+    <string name="app_name_weather">Weather</string>
+    <string name="app_name_calculator">Calculator</string>
+
+    <string name="accessibility_service_description">App Lock uses this service to detect when you open a protected app and show the PIN screen. It only monitors which app comes to the foreground — it cannot read screen contents.</string>
+</resources>
