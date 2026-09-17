@@ -21,7 +21,7 @@ import javax.crypto.spec.PBEKeySpec
  * Pure domain logic with no Android dependencies for testability.
  */
 class PinRepository(
-    private val storage: PinStorage,
+    val storage: PinStorage,  // Made public for SettingsViewModel access
     private val clock: Clock = Clock.systemDefaultZone()
 ) {
     companion object {

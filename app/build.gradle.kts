@@ -68,6 +68,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.5")
 
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.0")
+
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 

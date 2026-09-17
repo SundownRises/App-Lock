@@ -1,24 +1,38 @@
 package com.anika.applock.ui
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.anika.applock.domain.PinRepository
+import com.anika.applock.platform.DataStorePinStorage
+import com.anika.applock.ui.applist.AppListScreen
+import com.anika.applock.ui.applist.AppListViewModel
+import com.anika.applock.ui.intruder.IntruderLogScreen
+import com.anika.applock.ui.intruder.IntruderLogViewModel
+import com.anika.applock.ui.settings.SettingsScreen
+import com.anika.applock.ui.settings.SettingsViewModel
+import com.anika.applock.ui.setup.OnboardingScreen
+import com.anika.applock.ui.setup.OnboardingViewModel
+import com.anika.applock.ui.stealth.StealthModeScreen
+import com.anika.applock.ui.stealth.StealthModeViewModel
+import kotlinx.coroutines.launch
 
 /**
- * Main activity - settings and app list.
- *
- * For now, this is a placeholder to allow testing the lock screen.
- * Full implementation includes:
- * - Onboarding flow for permissions
- * - App list with checkboxes and notification privacy dropdowns
- * - Settings (timeout, recovery code, stealth mode)
- * - Intruder log viewer
+ * Main activity with bottom navigation.
  */
 class MainActivity : ComponentActivity() {
 
@@ -27,11 +41,39 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainScreen()
+                val navController = rememberNavController()
+                val scope = rememberCoroutineScope()
+
+                // Check if PIN is set (onboarding needed)
+                var isPinSet by remember { mutableStateOf<Boolean?>(null) }
+
+                LaunchedEffect(Unit) {
+                    val pinRepo = PinRepository(DataStorePinStorage(applicationContext))
+                    isPinSet = pinRepo.isPinSet()
+                }
+
+                when (isPinSet) {
+                    null -> {
+                        // Loading
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    false -> {
+                        // Show onboarding
+                        OnboardingScreen(
+                            viewModel = viewModel {
+                                OnboardingViewModel(applicationContext)
+                            },
+                            onComplete = {
+                                isPinSet = true
+                            }
+                        )
+                    }
+                    true -> {
+                        // Show main app
+                        AppScaffold(navController)
+                    }
                 }
             }
         }
@@ -39,46 +81,74 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "App Lock",
-            style = MaterialTheme.typography.headlineLarge
-        )
+private fun AppScaffold(navController: NavHostController) {
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-        Spacer(Modifier.height(16.dp))
+    Scaffold(
+        bottomBar = {
+            if (currentRoute !in listOf("stealth")) {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Lock, contentDescription = "Apps") },
+                        label = { Text("Apps") },
+                        selected = currentRoute == "apps",
+                        onClick = { navController.navigate("apps") { launchSingleTop = true } }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                        label = { Text("Settings") },
+                        selected = currentRoute == "settings",
+                        onClick = { navController.navigate("settings") { launchSingleTop = true } }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Camera, contentDescription = "Intruders") },
+                        label = { Text("Intruders") },
+                        selected = currentRoute == "intruders",
+                        onClick = { navController.navigate("intruders") { launchSingleTop = true } }
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = "apps",
+            modifier = Modifier.padding(padding)
+        ) {
+            composable("apps") {
+                AppListScreen(
+                    viewModel = viewModel {
+                        AppListViewModel(navController.context)
+                    }
+                )
+            }
 
-        Text(
-            text = "Settings UI coming soon",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            composable("settings") {
+                SettingsScreen(
+                    viewModel = viewModel {
+                        SettingsViewModel(navController.context)
+                    },
+                    onNavigateToStealth = {
+                        navController.navigate("stealth")
+                    }
+                )
+            }
 
-        Spacer(Modifier.height(32.dp))
+            composable("intruders") {
+                IntruderLogScreen(
+                    viewModel = viewModel {
+                        IntruderLogViewModel(navController.context)
+                    }
+                )
+            }
 
-        Text(
-            text = """
-                Core features implemented:
-                • Lock session manager
-                • PIN repository with rate limiting
-                • Accessibility service for detection
-                • Notification privacy service
-                • Lock screen with adaptive layout
-                • Intruder camera capture
-                • Device admin receiver
-
-                To test:
-                1. Enable Accessibility Service in Settings
-                2. Add apps to protect (via DataStore directly for now)
-                3. Open a protected app
-            """.trimIndent(),
-            style = MaterialTheme.typography.bodyMedium
-        )
+            composable("stealth") {
+                StealthModeScreen(
+                    viewModel = viewModel {
+                        StealthModeViewModel(navController.context)
+                    }
+                )
+            }
+        }
     }
 }
